@@ -1,0 +1,38 @@
+{
+  "name": "ropeburn",
+  "version": "1.0.0",
+  "description": "Monitor Pull Requests from specific repositories",
+  "main": "inject.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jshirley/ropeburn"
+  },
+  "author": "Jay Shirley <code@jshirley.com> (https://github.com/jshirley)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jshirley/ropeburn/issues"
+  },
+  "homepage": "https://github.com/jshirley/ropeburn",
+  "devDependencies": {
+    "gulp": "^3.8.6",
+    "gulp-autoprefixer": "0.0.8",
+    "gulp-concat": "*",
+    "gulp-less": "^1.3.1",
+    "gulp-load-plugins": "^0.5.3",
+    "gulp-preprocess": "^1.1.1",
+    "gulp-rename": "^1.2.0",
+    "gulp-react": "^1.0.2",
+    "gulp-run": "^1.6.4",
+    "gulp-util": "^3.0.0",
+    "gulp-zip": "^2.0.1",
+    "crx": "^0.4.4",
+    "del": "^0.1.3",
+    "event-stream": "*",
+    "map-stream": "*",
+    "run-sequence": "^1.0.0",
+    "stream-series": "*"
+  }
+}
