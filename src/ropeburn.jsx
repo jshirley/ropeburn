@@ -196,16 +196,25 @@ var PullRequest = React.createClass({
   },
 
   render : function() {
+    var label = 'success';
+    if ( this.props.pull.weightedScore > 7 ) {
+      label = 'danger';
+    }
+    else if ( this.props.pull.weightedScore > 3 ) {
+      label = 'warning';
+    }
     return (
       <div className="pullRequest row" onClick={this.openPR} target="_ropeburnPull">
         <div className="col-xs-2">
           <img src={this.props.pull.user.avatar_url} style={{ width:"32px" }}/>
         </div> 
         <div className="col-xs-7 title">
+          <span className="label label-info">{this.props.pull.base.repo.name}</span>
+          {'\u00A0'}
           {this.props.pull.title}
         </div>
         <div className="col-xs-3">
-          <span className="label label-success">{this.props.pull.weightedScore}</span>
+          <span className={"label label-" + label}>{this.props.pull.weightedScore}</span>
         </div>
       </div>
     );
@@ -246,7 +255,7 @@ var RopeburnList = React.createClass({
       });
     });
 
-    return sortedList.sort(function(a, b) { return b.score - a.score });
+    return sortedList.sort(function(a, b) { return b.weightedScore - a.weightedScore });
   },
 
 
@@ -350,7 +359,6 @@ var Ropeburn = React.createClass({
   setViewCallback: function(view) {
     var v = view; view = null;
     return function() {
-      console.log('setting active view to ' + v);
       this.setActiveView(v);
     }.bind(this);
   },
