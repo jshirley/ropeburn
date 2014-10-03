@@ -1,3 +1,6 @@
+var DANGER_THRESHOLD  = 8;
+var WARNING_THRESHOLD = 3;
+
 function scorePullRequest(pull) {
   var create  = moment(pull.created_at),
       updated = moment(pull.updated_at);
@@ -78,8 +81,17 @@ var RopeburnPreferences = React.createClass({
         <div className="list-group">
           {availableRepos}
         </div>
+        <p className="text-center">
+          <a href="#" onClick={this.triggerHelpView}>Need help?</a>
+        </p>
       </div>
     )
+  },
+
+  triggerHelpView: function(e) {
+    e.preventDefault();
+    this.props.setActiveView('Help');
+    return false;
   },
 
   loadReposForOrg: function(org_id) {
@@ -171,18 +183,26 @@ var RopeburnIntro = React.createClass({
     }
   },
 
+  setViewCallback: function(view) {
+    var v = view; view = null;
+    return function() {
+      this.props.setActiveView(v);
+    }.bind(this);
+  },
+
   render : function() {
     return (
-      <div id="introduction">
-        <h3>Intro Window</h3>
-        <form onSubmit={this.saveSettings}>
-          <p>Enter your GitHub Personal Access Token</p>
-          <input type="text" name="access_token" ref="access_token"/>
-          <br/>
-          <button>Next</button>
-          <hr/>
+      <div id="introduction" className="container">
+        <form onSubmit={this.saveSettings} className="form-vertical">
+          <div className="form-group">
+            <label for="accessTokenInput">Enter your GitHub Personal Access Token</label>
+            <input type="text" className="form-control" id="accessTokenInput" placeholder="Personal Access Token" ref="access_token" />
+          </div>
+          <p className="text-center">
+            <button className="btn btn-primary">Next</button>
+          </p>
           <p>
-            <a href="#">Need help?</a>
+            <a href="#" onClick={this.setViewCallback('Help')}>Need help?</a>
           </p>
         </form>
       </div>
@@ -197,26 +217,26 @@ var PullRequest = React.createClass({
 
   render : function() {
     var label = 'success';
-    if ( this.props.pull.weightedScore > 7 ) {
+    if ( this.props.pull.weightedScore > DANGER_THRESHOLD ) {
       label = 'danger';
     }
-    else if ( this.props.pull.weightedScore > 3 ) {
+    else if ( this.props.pull.weightedScore > WARNING_THRESHOLD ) {
       label = 'warning';
     }
     return (
-      <div className="pullRequest row" onClick={this.openPR} target="_ropeburnPull">
-        <div className="col-xs-2">
+      <tr className="pullRequest row" onClick={this.openPR} target="_ropeburnPull">
+        <td style={{ width: "32px" }}>
           <img src={this.props.pull.user.avatar_url} style={{ width:"32px" }}/>
-        </div> 
-        <div className="col-xs-7 title">
+        </td> 
+        <td className="title">
           <span className="label label-info">{this.props.pull.base.repo.name}</span>
           {'\u00A0'}
           {this.props.pull.title}
-        </div>
-        <div className="col-xs-3">
+        </td>
+        <td style={{ width: "64px" }}>
           <span className={"label label-" + label}>{this.props.pull.weightedScore}</span>
-        </div>
-      </div>
+        </td>
+      </tr>
     );
   }
 });
@@ -238,9 +258,11 @@ var RopeburnList = React.createClass({
     });
 
     return (
-      <div className="pullList">
-        {pulls}
-      </div>
+      <table className="pullList table table-striped">
+        <tbody>
+          {pulls}
+        </tbody>
+      </table>
     );
   },
 
@@ -291,20 +313,11 @@ var RopeburnList = React.createClass({
 
 var Ropeburn = React.createClass({
   getInitialState: function() {
-    var view = 'Intro';
-
-    if ( this.props.access_token && this.props.repositories.length > 0 ) {
-      view = 'List';
-    }
-    else if ( this.props.access_token ) {
-      view = 'Preferences';
-    }
-
     return {
       access_token  : this.props.access_token,
       repositories  : this.props.repositories || [],
       pull_requests : [],
-      activeView    : view
+      activeView    : this.figureOutView()
     };
   },
 
@@ -315,7 +328,7 @@ var Ropeburn = React.createClass({
     if ( viewName == 'List' ) {
       view = (<RopeburnList access_token={this.state.access_token} repositories={this.state.repositories} github_base_url={this.props.github_base_url} setActiveView={this.setActiveView}/>);
       menu = (
-          <div className="col-xs-3" onClick={this.setViewCallback('Preferences')}>
+          <div className="col-xs-3 text-right" onClick={this.setViewCallback('Preferences')}>
             <i className="fa fa-cog"></i>
           </div>
       );
@@ -323,7 +336,7 @@ var Ropeburn = React.createClass({
     else if ( viewName == 'Preferences' ) {
       view = (<RopeburnPreferences access_token={this.state.access_token} repositories={this.state.repositories} github_base_url={this.props.github_base_url} setActiveView={this.setActiveView} addRepository={this.addRepository} removeRepository={this.removeRepository}/>);
       menu = (
-          <div className="col-xs-3" onClick={this.setViewCallback('List')}>
+          <div className="col-xs-3 text-right" onClick={this.setViewCallback('List')}>
             <i className="fa fa-close"></i>
           </div>
       );
@@ -331,7 +344,7 @@ var Ropeburn = React.createClass({
     else if ( viewName == 'Help' ) {
       view = (<RopeburnHelp setActiveView={this.setActiveView}/>);
       menu = (
-          <div className="col-xs-3" onClick={this.setViewCallback('Intro')}>
+          <div className="col-xs-3 text-right" onClick={this.setViewCallback(null)}>
             <i className="fa fa-close"></i>
           </div>
       );
@@ -364,8 +377,22 @@ var Ropeburn = React.createClass({
   },
 
   setActiveView : function(view) {
-    this.setState({ activeView: view });
+    this.setState({ activeView: view || this.figureOutView() });
   },
+
+  figureOutView: function() {
+    var view = 'Intro';
+
+    if ( this.props.access_token && this.props.repositories.length > 0 ) {
+      view = 'List';
+    }
+    else if ( this.props.access_token ) {
+      view = 'Preferences';
+    }
+   
+    return view; 
+  },
+
 
   setAccessToken: function(token) {
     chrome.storage.sync.set({'access_token': token}, function() {
